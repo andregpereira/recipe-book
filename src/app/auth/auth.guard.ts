@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   ActivatedRouteSnapshot,
   CanActivate,
+  CanActivateFn,
   Router,
   RouterStateSnapshot,
   UrlTree,
@@ -18,7 +19,7 @@ export class AuthGuard implements CanActivate {
     private authService: AuthService,
     private router: Router,
     private store: Store<fromApp.AppState>
-  ) {}
+  ) { }
 
   canActivate(
     route: ActivatedRouteSnapshot,
@@ -41,6 +42,27 @@ export class AuthGuard implements CanActivate {
       //       this.router.navigate(['/auth']);
       //     }
       //   })
+    );
+  }
+}
+
+// Função de autenticação
+export function authenticationGuard(): CanActivateFn {
+  return (): boolean | Observable<boolean | UrlTree> | Promise<boolean | UrlTree> => {
+    const router: Router = inject(Router);
+    const store: Store<fromApp.AppState> = inject(Store);
+    return store.select('auth').pipe(
+      take(1),
+      map((authState) => {
+        return authState.user;
+      }),
+      map((user) => {
+        const isAuth = !!user;
+        if (isAuth) {
+          return true;
+        }
+        return router.createUrlTree(['/auth']);
+      })
     );
   }
 }
